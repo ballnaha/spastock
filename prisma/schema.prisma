@@ -1,0 +1,47 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Material {
+  id        Int      @id @default(autoincrement())
+  matnr     String   @map("MATNR")  // Material Number
+  maktx     String?  @map("MAKTX") @db.Text // Material Description
+  matkl     String?  @map("MATKL")  // Material Group
+  wgbez     String?  @map("WGBEZ")  // Material Group Description
+  zmatg2    String?  @map("ZMATG2") // Custom Group 2
+  zdest2    String?  @map("ZDEST2") // Custom Group 2 Description
+  mtart     String?  @map("MTART")  // Material Type
+  mseh3     String?  @map("MSEH3")  // Base Unit of Measure (PC, KG, etc.)
+  werks     String?  @map("WERKS")  // Plant
+  dismm     String?  @map("DISMM")  // MRP Type
+  minbe     Float?   @map("MINBE")  // Reorder Point
+  disls     String?  @map("DISLS")  // Lot Size
+  mabst     Float?   @map("MABST")  // Maximum Stock Level
+  plifz     Int?     @map("PLIFZ")  // Planned Delivery Time in Days
+  lbkum     Float?   @map("LBKUM")  // Total Valuated Stock (Current Stock)
+  demand    Float?   @map("DEMAND") // Demand Quantity
+  actualDemand Float?   @map("ACTUAL_DEMAND") // User-adjusted Demand Quantity
+  deliveryDate String?  @map("DELIVERY_DATE") // Delivery Date
+  deliveryTime String?  @map("DELIVERY_TIME") // Delivery Time
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([matnr, werks], name: "matnr_werks")
+  @@index([werks])
+  @@index([dismm])
+  @@index([demand])
+  @@index([mtart])
+  @@index([matkl])
+  @@map("materials")
+}
