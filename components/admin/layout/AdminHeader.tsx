@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { AppBar, Toolbar, IconButton, Typography, Box, Badge, Avatar } from '@mui/material';
-import { HambergerMenu, Notification, Setting2, SearchNormal1 } from 'iconsax-react';
+import { HambergerMenu, Notification, Setting2, SearchNormal1, User } from 'iconsax-react';
 
 interface AdminHeaderProps {
   onMenuClick: () => void;
@@ -111,18 +111,36 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, isSidebarOpen })
                 Stock Management
               </Typography>
             </Box>
-            <Avatar
-              src="/images/psc-logo.png"
-              sx={{
-                width: { xs: 32, sm: 40 },
-                height: { xs: 32, sm: 40 },
-                borderRadius: 2.5,
-                bgcolor: '#2D60FF',
-                boxShadow: '0 4px 10px rgba(45, 96, 255, 0.2)'
-              }}
-            >
-              A
-            </Avatar>
+            <Box sx={{ position: 'relative' }}>
+              <Avatar
+                sx={{
+                  width: { xs: 32, sm: 40 },
+                  height: { xs: 32, sm: 40 },
+                  borderRadius: '50%',
+                  bgcolor: '#2D60FF',
+                  boxShadow: '0 4px 10px rgba(45, 96, 255, 0.2)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s ease',
+                  '&:hover': {
+                    transform: 'scale(1.05)',
+                    boxShadow: '0 6px 15px rgba(45, 96, 255, 0.3)'
+                  }
+                }}
+              >
+                <User size="24" color="#FFFFFF" variant="Outline" />
+              </Avatar>
+              <Box sx={{
+                position: 'absolute',
+                bottom: -2,
+                right: -2,
+                width: 12,
+                height: 12,
+                bgcolor: '#10B981',
+                border: '2px solid #FFFFFF',
+                borderRadius: '50%',
+                zIndex: 1
+              }} />
+            </Box>
           </Box>
         </Box>
       </Toolbar>

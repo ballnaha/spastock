@@ -37,6 +37,7 @@ interface Material {
     mabst: number | null;
     dismm: string;
     werks: string;
+    demand: number | null;
 }
 
 // Mobile Card Component
@@ -58,8 +59,8 @@ const MaterialMobileCard = ({ m, onEdit, isDataIncomplete }: { m: Material, onEd
         <Stack spacing={2}>
             {/* Header: Icon + Info + Edit */}
             <Stack direction="row" spacing={1.5} alignItems="flex-start">
-                <Box sx={{ p: 1, bgcolor: '#ECFDF5', borderRadius: 2, color: '#10B981', display: 'flex' }}>
-                    <BoxIcon size="24" variant="Bulk" color="#10B981" />
+                <Box sx={{ p: 1, bgcolor: '#F0F4FF', borderRadius: 2, color: '#2D60FF', display: 'flex' }}>
+                    <BoxIcon size="24" variant="Bulk" color="#2D60FF" />
                 </Box>
                 <Box sx={{ flex: 1 }}>
                     <Typography variant="subtitle2" sx={{ fontWeight: 800, color: '#1A1D1F', lineHeight: 1.3 }}>
@@ -72,16 +73,16 @@ const MaterialMobileCard = ({ m, onEdit, isDataIncomplete }: { m: Material, onEd
                 <IconButton
                     size="small"
                     onClick={() => onEdit(m)}
-                    sx={{ bgcolor: '#FFFBEB', '&:hover': { bgcolor: '#FEF3C7' } }}
+                    sx={{ bgcolor: '#F0F4FF', '&:hover': { bgcolor: '#DDE6FF' } }}
                 >
-                    <Edit2 size="18" color="#F59E0B" variant="Bold" />
+                    <Edit2 size="18" color="#2D60FF" variant="Bold" />
                 </IconButton>
             </Stack>
 
             {/* Metrics Grid */}
             <Box sx={{
                 display: 'grid',
-                gridTemplateColumns: '1fr 1fr 1fr',
+                gridTemplateColumns: '1fr 1fr 1fr 1fr',
                 gap: 1.5,
                 bgcolor: '#F9F9FB',
                 p: 1.5,
@@ -89,25 +90,31 @@ const MaterialMobileCard = ({ m, onEdit, isDataIncomplete }: { m: Material, onEd
             }}>
                 <Box>
                     <Typography variant="caption" sx={{ color: '#9A9FA5', fontWeight: 700, display: 'block', mb: 0.5 }}>STOCK</Typography>
-                    <Typography sx={{ fontWeight: 800, fontSize: '0.9rem' }}>{m.lbkum?.toLocaleString()}</Typography>
+                    <Typography sx={{ fontWeight: 800, fontSize: '0.85rem' }}>{m.lbkum?.toLocaleString()}</Typography>
                 </Box>
                 <Box>
                     <Typography variant="caption" sx={{ color: '#F59E0B', fontWeight: 700, display: 'block', mb: 0.5 }}>REORDER</Typography>
                     <Stack direction="row" alignItems="center" spacing={0.5}>
-                        <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', color: (m.minbe || 0) === 0 ? '#FF4D4D' : '#F59E0B' }}>
+                        <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', color: (m.minbe || 0) === 0 ? '#FF4D4D' : '#F59E0B' }}>
                             {m.minbe?.toLocaleString() || '0'}
                         </Typography>
                         {(!m.minbe || m.minbe === 0) && <Danger size="14" variant="Bold" color="#FF4D4D" />}
                     </Stack>
                 </Box>
                 <Box>
-                    <Typography variant="caption" sx={{ color: '#EF4444', fontWeight: 700, display: 'block', mb: 0.5 }}>MAX</Typography>
+                    <Typography variant="caption" sx={{ color: '#2D60FF', fontWeight: 700, display: 'block', mb: 0.5 }}>MAX</Typography>
                     <Stack direction="row" alignItems="center" spacing={0.5}>
-                        <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', color: (m.mabst || 0) === 0 ? '#FF4D4D' : '#EF4444' }}>
+                        <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', color: (m.mabst || 0) === 0 ? '#FF4D4D' : '#2D60FF' }}>
                             {m.mabst?.toLocaleString() || '0'}
                         </Typography>
                         {(!m.mabst || m.mabst === 0) && <Danger size="14" variant="Bold" color="#FF4D4D" />}
                     </Stack>
+                </Box>
+                <Box>
+                    <Typography variant="caption" sx={{ color: '#EF4444', fontWeight: 700, display: 'block', mb: 0.5 }}>DEMAND</Typography>
+                    <Typography sx={{ fontWeight: 800, fontSize: '0.85rem', color: '#EF4444' }}>
+                        {m.demand?.toLocaleString() || '0'}
+                    </Typography>
                 </Box>
             </Box>
 
@@ -123,6 +130,7 @@ export default function MaterialsPage() {
     const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
     const [loading, setLoading] = useState(true);
+    const [refreshKey, setRefreshKey] = useState(0);
     const [data, setData] = useState<Material[]>([]);
     const [search, setSearch] = useState('');
     const [missingConfig, setMissingConfig] = useState(false);
@@ -143,9 +151,9 @@ export default function MaterialsPage() {
     const facetsLoaded = React.useRef(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
 
-    const fetchMaterials = useCallback(async () => {
+    const fetchMaterials = useCallback(async (isQuiet = false) => {
         try {
-            setLoading(true);
+            if (!isQuiet) setLoading(true);
             const params = new URLSearchParams({
                 search,
                 missingConfig: missingConfig.toString(),
@@ -209,7 +217,8 @@ export default function MaterialsPage() {
             if (res.ok) {
                 setSnackbar({ open: true, message: 'Material updated successfully', severity: 'success' });
                 setEditOpen(false);
-                fetchMaterials();
+                setRefreshKey(prev => prev + 1);
+                fetchMaterials(true);
             } else {
                 throw new Error('Update failed');
             }
@@ -270,7 +279,7 @@ export default function MaterialsPage() {
     );
 
     return (
-        <Box sx={{ p: { xs: 2, md: 4 } }}>
+        <Box>
             {/* Header */}
             <Box sx={{
                 mb: 4,
@@ -493,7 +502,7 @@ export default function MaterialsPage() {
                     </Box>
                 ) : isMobile ? (
                     /* Mobile Card View */
-                    <Box sx={{ pb: 2 }}>
+                    <Box key={refreshKey} sx={{ pb: 2, animation: 'fadeInTable 0.5s ease-out' }}>
                         {data.map(m => (
                             <MaterialMobileCard
                                 key={m.id}
@@ -512,11 +521,12 @@ export default function MaterialsPage() {
                                     <TableCell sx={{ fontWeight: 700, color: '#6F767E' }}>MATERIAL</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 700, color: '#6F767E' }}>STOCK</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 700, color: '#F59E0B' }}>REORDER POINT</TableCell>
-                                    <TableCell align="right" sx={{ fontWeight: 700, color: '#EF4444' }}>MAX STOCK</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 700, color: '#2D60FF' }}>MAX STOCK</TableCell>
+                                    <TableCell align="right" sx={{ fontWeight: 700, color: '#EF4444' }}>DEMAND</TableCell>
                                     <TableCell align="center" sx={{ fontWeight: 700, color: '#6F767E' }}>ACTIONS</TableCell>
                                 </TableRow>
                             </TableHead>
-                            <TableBody>
+                            <TableBody key={refreshKey} sx={{ animation: 'fadeInTable 0.5s ease-out' }}>
                                 {data.map((m) => (
                                     <TableRow
                                         key={m.id}
@@ -565,13 +575,34 @@ export default function MaterialsPage() {
                                             <Typography sx={{
                                                 fontWeight: 700,
                                                 fontFamily: 'monospace',
-                                                color: (m.mabst || 0) === 0 ? '#FF4D4D' : '#EF4444'
+                                                color: (m.mabst || 0) === 0 ? '#FF4D4D' : '#2D60FF'
                                             }}>
                                                 {m.mabst?.toLocaleString(undefined, { maximumFractionDigits: 0 }) || '0'}
                                                 {(!m.mabst || m.mabst === 0) && (
                                                     <Danger size="14" variant="Bold" style={{ marginLeft: 4, verticalAlign: 'middle' }} />
                                                 )}
                                             </Typography>
+                                        </TableCell>
+
+                                        <TableCell align="right" sx={{ width: 120 }}>
+                                            {(m.demand || 0) > 0 ? (
+                                                <Box sx={{
+                                                    display: 'inline-flex',
+                                                    bgcolor: '#E53535',
+                                                    color: '#FFFFFF',
+                                                    px: 1.5, py: 0.3,
+                                                    borderRadius: 1,
+                                                    fontWeight: 800,
+                                                    fontFamily: 'monospace',
+                                                    fontSize: '0.85rem',
+                                                    minWidth: 60,
+                                                    justifyContent: 'center',
+                                                }}>
+                                                    {m.demand?.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                                                </Box>
+                                            ) : (
+                                                <Typography sx={{ fontWeight: 700, color: '#6F767E', fontFamily: 'monospace' }}>0</Typography>
+                                            )}
                                         </TableCell>
 
                                         <TableCell align="center">
@@ -667,8 +698,8 @@ export default function MaterialsPage() {
                     }}
                 >
                     <DialogTitle sx={{ fontWeight: 800, color: '#1A1D1F', display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                        <Box sx={{ p: 1, bgcolor: '#F5F3FF', borderRadius: 2, color: '#8B5CF6', display: 'flex' }}>
-                            <Setting2 size="24" variant="Bold" color="#8B5CF6" />
+                        <Box sx={{ p: 1, bgcolor: '#F0F4FF', borderRadius: 2, color: '#2D60FF', display: 'flex' }}>
+                            <Setting2 size="24" variant="Bold" color="#2D60FF" />
                         </Box>
                         Edit Configuration
                     </DialogTitle>
@@ -708,6 +739,14 @@ export default function MaterialsPage() {
                 severity={snackbar.severity}
                 onClose={() => setSnackbar({ ...snackbar, open: false })}
             />
+            <style>
+                {`
+                    @keyframes fadeInTable {
+                        from { opacity: 0.4; transform: translateY(5px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                `}
+            </style>
         </Box>
     );
 }

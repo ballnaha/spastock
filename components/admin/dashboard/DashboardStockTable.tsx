@@ -297,9 +297,9 @@ const DashboardStockTable = ({ filterMrpType, filterMinDemand, filterCritical }:
         setMounted(true);
     }, []);
 
-    const fetchStock = useCallback(async () => {
+    const fetchStock = useCallback(async (isQuiet = false) => {
         try {
-            setLoading(true);
+            if (!isQuiet) setLoading(true);
             const params = new URLSearchParams({
                 ...(search && { search }),
                 ...(filterMrpType && { mrpType: filterMrpType }),
@@ -350,7 +350,10 @@ const DashboardStockTable = ({ filterMrpType, filterMinDemand, filterCritical }:
     };
 
     const handleEditClose = () => {
+        if (saving) return;
         setEditOpen(false);
+        // Small delay to clear state after animation
+        setTimeout(clearEditState, 300);
     };
 
     const clearEditState = () => {
@@ -378,7 +381,7 @@ const DashboardStockTable = ({ filterMrpType, filterMinDemand, filterCritical }:
             if (json.success) {
                 setSnackbar({ open: true, message: 'บันทึกสำเร็จ', severity: 'success' });
                 handleEditClose();
-                fetchStock();
+                fetchStock(true); // Quiet refresh
             } else {
                 setSnackbar({ open: true, message: json.error || 'เกิดข้อผิดพลาด', severity: 'error' });
             }
@@ -428,7 +431,7 @@ const DashboardStockTable = ({ filterMrpType, filterMinDemand, filterCritical }:
                             </Paper>
 
                             <Tooltip title="Refresh data">
-                                <IconButton size="small" onClick={fetchStock} sx={{ bgcolor: '#F4F4F4', borderRadius: 2 }}>
+                                <IconButton size="small" onClick={() => fetchStock()} sx={{ bgcolor: '#F4F4F4', borderRadius: 2 }}>
                                     <Refresh size="16" color="#6F767E" variant="Linear" />
                                 </IconButton>
                             </Tooltip>
@@ -496,7 +499,10 @@ const DashboardStockTable = ({ filterMrpType, filterMinDemand, filterCritical }:
                     </Box>
                 ) : (mounted && isMobile) ? (
                     /* ===== MOBILE VIEW ===== */
-                    <Box sx={{ pb: 8, pt: 1, px: 1.5 }}>
+                    <Box sx={{
+                        pb: 8, pt: 1, px: 1.5,
+                        animation: 'fadeInTable 0.5s ease-out'
+                    }}>
                         {paginatedData.map((item) => (
                             <MaterialItemCard key={item.id} item={item} onEdit={handleEditOpen} mounted={mounted} />
                         ))}
@@ -551,7 +557,7 @@ const DashboardStockTable = ({ filterMrpType, filterMinDemand, filterCritical }:
                                     ))}
                                 </TableRow>
                             </TableHead>
-                            <TableBody>
+                            <TableBody sx={{ animation: 'fadeInTable 0.5s ease-out' }}>
                                 {paginatedData.map((item) => (
                                     <TableRow
                                         key={item.id}
@@ -766,7 +772,6 @@ const DashboardStockTable = ({ filterMrpType, filterMinDemand, filterCritical }:
                     disableSwipeToOpen={true}
                     disableScrollLock={true}
                     ModalProps={{ keepMounted: true }}
-                    SlideProps={{ onExited: clearEditState } as any}
                     sx={{
                         '& .MuiDrawer-paper': {
                             borderTopLeftRadius: 32,
@@ -799,52 +804,56 @@ const DashboardStockTable = ({ filterMrpType, filterMinDemand, filterCritical }:
                                 <DatePicker
                                     label="Delivery Date"
                                     value={editDate}
-                                    format="DD/MM/YYYY"
                                     onChange={(newValue) => setEditDate(newValue)}
-                                    slotProps={{ textField: { fullWidth: true } }}
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true,
+                                            variant: 'outlined'
+                                        }
+                                    }}
                                 />
                                 <TimePicker
                                     label="Delivery Time"
                                     value={editTime}
-                                    ampm={false}
                                     onChange={(newValue) => setEditTime(newValue)}
-                                    slotProps={{ textField: { fullWidth: true } }}
-                                />
-                                <TextField
-                                    label="Actual Demand"
-                                    type="number"
-                                    fullWidth
-                                    value={editActualDemand}
-                                    onChange={(e) => setEditActualDemand(e.target.value)}
-                                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                                    inputProps={{ step: "1" }}
-                                    sx={{
-                                        '& .MuiOutlinedInput-root': {
-                                            borderRadius: 2.5,
-                                            '& fieldset': { borderColor: '#EFEFEF' },
-                                            '&:hover fieldset': { borderColor: '#2D60FF' },
-                                            '&.Mui-focused fieldset': { borderColor: '#2D60FF' },
+                                    ampm={false}
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true,
+                                            variant: 'outlined'
                                         }
                                     }}
                                 />
-                                <Button
+                                <TextField
+                                    label="Actual Demand Override"
                                     fullWidth
-                                    variant="contained"
-                                    onClick={handleEditSave}
-                                    disabled={saving}
-                                    sx={{ py: 1.5, borderRadius: 3, fontWeight: 700, mt: 2 }}
-                                >
-                                    {saving ? <CircularProgress size={24} color="inherit" /> : 'Save Changes'}
-                                </Button>
-                                <Button
-                                    fullWidth
-                                    onClick={handleEditClose}
-                                    sx={{ py: 1.5, color: '#6F767E', fontWeight: 600 }}
-                                >
-                                    Cancel
-                                </Button>
+                                    type="number"
+                                    value={editActualDemand}
+                                    onChange={(e) => setEditActualDemand(e.target.value)}
+                                    helperText="Leave empty to use system demand"
+                                />
                             </Stack>
                         </LocalizationProvider>
+                    </Box>
+                    <Box sx={{ mt: 4, px: 2, display: 'flex', gap: 2 }}>
+                        <Button
+                            fullWidth
+                            variant="outlined"
+                            onClick={handleEditClose}
+                            disabled={saving}
+                            sx={{ borderRadius: 3, py: 1.5, fontWeight: 700, borderColor: '#EFEFEF', color: '#6F767E', textTransform: 'none' }}
+                        >
+                            ยกเลิก
+                        </Button>
+                        <Button
+                            fullWidth
+                            variant="contained"
+                            onClick={handleEditSave}
+                            disabled={saving}
+                            sx={{ borderRadius: 3, py: 1.5, fontWeight: 700, bgcolor: '#2D60FF', textTransform: 'none' }}
+                        >
+                            {saving ? <CircularProgress size={24} color="inherit" /> : 'บันทึก'}
+                        </Button>
                     </Box>
                 </SwipeableDrawer>
             ) : (
@@ -855,102 +864,108 @@ const DashboardStockTable = ({ filterMrpType, filterMinDemand, filterCritical }:
                     maxWidth="xs"
                     fullWidth
                     PaperProps={{
-                        sx: { borderRadius: 3, p: 1 }
+                        sx: { borderRadius: 4, p: 1 }
                     }}
                     onTransitionExited={clearEditState}
                 >
-                    <DialogTitle sx={{ fontWeight: 800, fontSize: '1.1rem', pb: 0.5 }}>
+                    <DialogTitle sx={{ fontWeight: 800, color: '#1A1D1F', display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Box sx={{ p: 1, bgcolor: '#F0F4FF', borderRadius: 2, color: '#2D60FF', display: 'flex' }}>
+                            <Edit2 size="24" variant="Bold" color="#2D60FF" />
+                        </Box>
                         Edit Delivery Info
                     </DialogTitle>
-                    {editItem && (
-                        <DialogContent>
-                            <Box sx={{ mb: 2, mt: 1 }}>
-                                <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1A1D1F' }}>
-                                    {editItem.material}
-                                </Typography>
-                                <Typography variant="caption" sx={{ color: '#9A9FA5' }}>
-                                    {editItem.matnr}
-                                </Typography>
-                            </Box>
-                            <LocalizationProvider dateAdapter={AdapterDayjs}>
-                                <Stack spacing={2.5} sx={{ mt: 1 }}>
-                                    <DatePicker
-                                        label="Delivery Date"
-                                        value={editDate}
-                                        format="DD/MM/YYYY"
-                                        onChange={(newValue) => setEditDate(newValue)}
-                                        slotProps={{
-                                            textField: {
-                                                fullWidth: true, size: 'small',
-                                                sx: {
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                        '& fieldset': { borderColor: '#EFEFEF' },
-                                                        '&:hover fieldset': { borderColor: '#2D60FF' },
-                                                        '&.Mui-focused fieldset': { borderColor: '#2D60FF' },
-                                                    }
+                    <DialogContent>
+                        <Box sx={{ mb: 3, mt: 1 }}>
+                            <Typography variant="subtitle2" sx={{ fontWeight: 700, color: '#1A1D1F' }}>
+                                {editItem?.material}
+                            </Typography>
+                            <Typography variant="caption" sx={{ color: '#9A9FA5' }}>
+                                {editItem?.matnr}
+                            </Typography>
+                        </Box>
+                        <LocalizationProvider dateAdapter={AdapterDayjs}>
+                            <Stack spacing={2.5}>
+                                <DatePicker
+                                    label="Delivery Date"
+                                    value={editDate}
+                                    onChange={(newValue) => setEditDate(newValue)}
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true, size: 'small',
+                                            sx: {
+                                                '& .MuiOutlinedInput-root': {
+                                                    borderRadius: 2,
+                                                    '& fieldset': { borderColor: '#EFEFEF' },
+                                                    '&:hover fieldset': { borderColor: '#2D60FF' },
+                                                    '&.Mui-focused fieldset': { borderColor: '#2D60FF' },
                                                 }
                                             }
-                                        }}
-                                    />
-                                    <TimePicker
-                                        label="Delivery Time"
-                                        value={editTime}
-                                        ampm={false}
-                                        onChange={(newValue) => setEditTime(newValue)}
-                                        slotProps={{
-                                            textField: {
-                                                fullWidth: true, size: 'small',
-                                                sx: {
-                                                    '& .MuiOutlinedInput-root': {
-                                                        borderRadius: 2,
-                                                        '& fieldset': { borderColor: '#EFEFEF' },
-                                                        '&:hover fieldset': { borderColor: '#2D60FF' },
-                                                        '&.Mui-focused fieldset': { borderColor: '#2D60FF' },
-                                                    }
+                                        }
+                                    }}
+                                />
+                                <TimePicker
+                                    label="Delivery Time"
+                                    value={editTime}
+                                    onChange={(newValue) => setEditTime(newValue)}
+                                    ampm={false}
+                                    slotProps={{
+                                        textField: {
+                                            fullWidth: true, size: 'small',
+                                            sx: {
+                                                '& .MuiOutlinedInput-root': {
+                                                    borderRadius: 2,
+                                                    '& fieldset': { borderColor: '#EFEFEF' },
+                                                    '&:hover fieldset': { borderColor: '#2D60FF' },
+                                                    '&.Mui-focused fieldset': { borderColor: '#2D60FF' },
                                                 }
                                             }
-                                        }}
-                                    />
-                                    <TextField
-                                        label="Actual Demand"
-                                        type="number"
-                                        fullWidth
-                                        size="small"
-                                        value={editActualDemand}
-                                        onChange={(e) => setEditActualDemand(e.target.value)}
-                                        onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                                        inputProps={{ step: "1" }}
-                                        sx={{
-                                            '& .MuiOutlinedInput-root': {
-                                                borderRadius: 2,
-                                                '& fieldset': { borderColor: '#EFEFEF' },
-                                                '&:hover fieldset': { borderColor: '#2D60FF' },
-                                                '&.Mui-focused fieldset': { borderColor: '#2D60FF' },
-                                            }
-                                        }}
-                                    />
-                                </Stack>
-                            </LocalizationProvider>
-                        </DialogContent>
-                    )}
-                    <DialogActions sx={{ px: 3, pb: 2.5 }}>
+                                        }
+                                    }}
+                                />
+                                <TextField
+                                    label="Actual Demand"
+                                    type="number"
+                                    fullWidth
+                                    size="small"
+                                    value={editActualDemand}
+                                    onChange={(e) => setEditActualDemand(e.target.value)}
+                                    onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                                    sx={{
+                                        '& .MuiOutlinedInput-root': {
+                                            borderRadius: 2,
+                                            '& fieldset': { borderColor: '#EFEFEF' },
+                                            '&:hover fieldset': { borderColor: '#2D60FF' },
+                                            '&.Mui-focused fieldset': { borderColor: '#2D60FF' },
+                                        }
+                                    }}
+                                    helperText="Leave empty to use system demand"
+                                />
+                            </Stack>
+                        </LocalizationProvider>
+                    </DialogContent>
+                    <DialogActions sx={{ p: 3, pt: 0 }}>
                         <Button
                             onClick={handleEditClose}
-                            sx={{ textTransform: 'none', fontWeight: 600, color: '#6F767E', borderRadius: 2 }}
+                            disabled={saving}
+                            sx={{ color: '#6F767E', fontWeight: 700, textTransform: 'none' }}
                         >
-                            Cancel
+                            ยกเลิก
                         </Button>
                         <Button
-                            variant="contained"
                             onClick={handleEditSave}
+                            variant="contained"
                             disabled={saving}
                             sx={{
-                                textTransform: 'none', fontWeight: 700, borderRadius: 2.5, px: 3,
-                                bgcolor: '#2D60FF', '&:hover': { bgcolor: '#1A4DDF' }
+                                bgcolor: '#2D60FF',
+                                borderRadius: 2.5,
+                                fontWeight: 700,
+                                textTransform: 'none',
+                                px: 4,
+                                height: 44,
+                                '&:hover': { bgcolor: '#1A4DDF' }
                             }}
                         >
-                            {saving ? <CircularProgress size={20} color="inherit" /> : 'Save Changes'}
+                            {saving ? <CircularProgress size={20} color="inherit" /> : 'บันทึก'}
                         </Button>
                     </DialogActions>
                 </Dialog>
@@ -962,7 +977,15 @@ const DashboardStockTable = ({ filterMrpType, filterMinDemand, filterCritical }:
                 severity={snackbar.severity}
                 onClose={() => setSnackbar({ ...snackbar, open: false })}
             />
-        </Box>
+            <style>
+                {`
+                    @keyframes fadeInTable {
+                        from { opacity: 0.4; transform: translateY(5px); }
+                        to { opacity: 1; transform: translateY(0); }
+                    }
+                `}
+            </style>
+        </Box >
     );
 };
 
