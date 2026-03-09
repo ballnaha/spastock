@@ -85,7 +85,7 @@ const AdminHeader: React.FC<AdminHeaderProps> = ({ onMenuClick, isSidebarOpen })
         }}>
           <Box
             component="img"
-            src="/images/psc-logo.png"
+            src="/images/spa-logo1.png"
             alt="Logo"
             sx={{ width: 32, height: 'auto' }}
           />

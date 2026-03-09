@@ -4,7 +4,8 @@ import React, { useEffect, useState, ChangeEvent } from 'react';
 import {
     Typography, Paper, Box, Button, CircularProgress,
     Skeleton, Stack, IconButton, Fade, FormControl,
-    Select, MenuItem, Chip, SelectChangeEvent, Tooltip, Checkbox, FormControlLabel
+    Select, MenuItem, Chip, SelectChangeEvent, Tooltip, Checkbox, FormControlLabel,
+    useMediaQuery, useTheme
 } from '@mui/material';
 import {
     Add, Trade, CardPos, Profile2User, Box as BoxIcon,
@@ -44,6 +45,9 @@ export default function DashboardPage() {
     const [data, setData] = useState<DashboardData | null>(null);
     const [loading, setLoading] = useState(true);
     const [showFilters, setShowFilters] = useState(true);
+
+    const theme = useTheme();
+    const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
     // Filter states - matching stock defaults
     const [filterMrpType, setFilterMrpType] = useState('VB');
@@ -137,11 +141,11 @@ export default function DashboardPage() {
         plotOptions: {
             bar: {
                 horizontal: false,
-                columnWidth: '50px',
-                borderRadius: 0, // Sharp edges
+                columnWidth: isMobile ? '28px' : '50px',
+                borderRadius: 0,
                 dataLabels: {
                     total: {
-                        enabled: true,
+                        enabled: !isMobile,
                         formatter: (val: any) => val ? Number(val).toLocaleString('en-US', { maximumFractionDigits: 0 }) : '0',
                         style: {
                             fontSize: '12px',
@@ -155,8 +159,8 @@ export default function DashboardPage() {
             },
         },
         dataLabels: {
-            enabled: true,
-            enabledOnSeries: [0, 1], // Only show labels on Stock & Demand bars, NOT on line
+            enabled: !isMobile,
+            enabledOnSeries: [0, 1],
             formatter: (val: any) => val ? Number(val).toLocaleString('en-US', { maximumFractionDigits: 0 }) : '0',
             style: {
                 colors: ['#FFFFFF'],
@@ -167,27 +171,36 @@ export default function DashboardPage() {
             dropShadow: { enabled: false }
         },
         markers: {
-            size: 0, // No markers on any series
+            size: 0,
         },
         stroke: {
             show: true,
-            width: [1, 1, 3], // 1px for bars (white separator), 3px for line
+            width: [1, 1, isMobile ? 2 : 3],
             colors: ['#fff', '#fff', '#F4C430'],
             curve: 'smooth',
-            dashArray: [0, 0, 6] // 0 for bars (solid), 6 for dashed line
+            dashArray: [0, 0, 6]
         },
         xaxis: {
             categories: displayData.map(d => d.name),
             tickAmount: displayData.length,
             labels: {
-                style: { colors: '#6F767E', fontSize: '10px', fontWeight: 500, fontFamily: '"Sarabun", sans-serif' },
-                rotate: 0,
+                style: {
+                    colors: '#6F767E',
+                    fontSize: isMobile ? '8px' : '10px',
+                    fontWeight: 500,
+                    fontFamily: '"Sarabun", sans-serif'
+                },
+                rotate: isMobile ? -45 : 0,
+                rotateAlways: isMobile,
                 hideOverlappingLabels: false,
-                trim: false,
-                maxHeight: 120,
+                trim: isMobile,
+                maxHeight: isMobile ? 80 : 120,
                 formatter: function (val: string) {
                     if (!val) return '';
-                    // If name is long, split into two lines
+                    if (isMobile) {
+                        // Truncate long names on mobile
+                        return val.length > 12 ? val.substring(0, 12) + '…' : val;
+                    }
                     if (val.length > 20) {
                         const mid = Math.floor(val.length / 2);
                         const spaceIndex = val.indexOf(' ', mid - 5);
@@ -203,24 +216,37 @@ export default function DashboardPage() {
             axisTicks: { show: false }
         },
         yaxis: {
-            title: { text: 'Units', style: { color: '#9A9FA5', fontWeight: 500, fontFamily: '"Sarabun", sans-serif' } },
+            title: {
+                text: isMobile ? '' : 'Units',
+                style: { color: '#9A9FA5', fontWeight: 500, fontFamily: '"Sarabun", sans-serif' }
+            },
             labels: {
-                style: { colors: '#9A9FA5', fontWeight: 500, fontFamily: '"Sarabun", sans-serif' },
-                formatter: (val) => val.toLocaleString('en-US', { maximumFractionDigits: 0 })
+                style: {
+                    colors: '#9A9FA5',
+                    fontWeight: 500,
+                    fontSize: isMobile ? '9px' : '12px',
+                    fontFamily: '"Sarabun", sans-serif'
+                },
+                formatter: (val) => {
+                    if (isMobile && val >= 1000) {
+                        return (val / 1000).toFixed(0) + 'K';
+                    }
+                    return val.toLocaleString('en-US', { maximumFractionDigits: 0 });
+                }
             }
         },
         grid: {
             borderColor: '#F0F0F0',
-            strokeDashArray: 0, // Solid thin lines
+            strokeDashArray: 0,
             yaxis: { lines: { show: true } },
             xaxis: { lines: { show: false } },
-            padding: { top: 0, right: 0, bottom: 0, left: 10 }
+            padding: { top: 0, right: isMobile ? 5 : 0, bottom: 0, left: isMobile ? 0 : 10 }
         },
         fill: {
-            opacity: [0.85, 0.85, 1], // Slight opacity on bars, full on line
+            opacity: [0.85, 0.85, 1],
             type: 'solid',
         },
-        colors: ['#2D60FF', '#fd3030', '#F4C430'], // Blue, Red, Gold for ROP
+        colors: ['#2D60FF', '#fd3030', '#F4C430'],
         tooltip: {
             theme: 'light',
             style: { fontFamily: '"Sarabun", sans-serif' },
@@ -237,19 +263,18 @@ export default function DashboardPage() {
         },
         legend: {
             position: 'top',
-            horizontalAlign: 'right',
+            horizontalAlign: isMobile ? 'center' : 'right',
             offsetY: 0,
-            fontSize: '12px',
+            fontSize: isMobile ? '10px' : '12px',
             fontFamily: '"Sarabun", sans-serif',
             fontWeight: 600,
             labels: { colors: '#1A1D1F' },
             markers: {
-                shape: 'square', // Matches sharp bars
-                size: 8,
+                shape: 'square',
+                size: isMobile ? 6 : 8,
                 strokeWidth: 0,
-
             },
-            itemMargin: { horizontal: 10, vertical: 0 }
+            itemMargin: { horizontal: isMobile ? 6 : 10, vertical: 0 }
         },
     };
 
@@ -510,10 +535,10 @@ export default function DashboardPage() {
                 <Paper
                     elevation={0}
                     sx={{
-                        p: 3,
+                        p: { xs: 1.5, sm: 3 },
                         borderRadius: 4,
                         border: '1px solid #F4F4F4',
-                        minHeight: 450,
+                        minHeight: { xs: 350, sm: 450 },
                     }}
                 >
                     {loading ? (
@@ -521,14 +546,26 @@ export default function DashboardPage() {
                             <CircularProgress sx={{ color: '#2D60FF' }} />
                         </Box>
                     ) : (
-                        <Box sx={{ width: '100%', height: 500 }}>
-                            <Chart
-                                options={chartOptions}
-                                series={chartSeries}
-                                type="bar"
-                                height="100%"
-                                width="100%"
-                            />
+                        <Box sx={{
+                            width: '100%',
+                            overflowX: { xs: 'auto', sm: 'visible' },
+                            WebkitOverflowScrolling: 'touch',
+                            '&::-webkit-scrollbar': { height: 4 },
+                            '&::-webkit-scrollbar-thumb': { bgcolor: '#E0E0E0', borderRadius: 2 },
+                        }}>
+                            <Box sx={{
+                                minWidth: { xs: `${Math.max(displayData.length * 60, 400)}px`, sm: 'unset' },
+                                width: '100%',
+                                height: { xs: 350, sm: 500 },
+                            }}>
+                                <Chart
+                                    options={chartOptions}
+                                    series={chartSeries}
+                                    type="bar"
+                                    height="100%"
+                                    width="100%"
+                                />
+                            </Box>
                         </Box>
                     )}
                 </Paper>
