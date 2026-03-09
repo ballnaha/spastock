@@ -94,12 +94,12 @@ const MaterialItemCard = React.memo(({ item, onEdit, mounted }: { item: Material
             </Box>
             <Stack direction="row" spacing={1.2} alignItems="center">
                 <Box sx={{ flexShrink: 0, textAlign: 'right' }}>
-                    <Typography variant="caption" sx={{ color: item.actualDemand !== item.demand ? '#2D60FF' : '#9A9FA5', fontWeight: 800, display: 'block', fontSize: '0.625rem', mb: -0.2 }}>
-                        {item.actualDemand !== item.demand ? 'ADJUSTED' : 'ACTUAL'}
+                    <Typography variant="caption" sx={{ color: Math.round(item.actualDemand) !== Math.round(item.demand) ? '#2D60FF' : '#9A9FA5', fontWeight: 800, display: 'block', fontSize: '0.625rem', mb: -0.2 }}>
+                        {Math.round(item.actualDemand) !== Math.round(item.demand) ? 'ADJUSTED' : 'ACTUAL'}
                     </Typography>
                     <Typography variant="body2" sx={{
                         fontWeight: 800,
-                        color: item.actualDemand !== item.demand ? '#2D60FF' : '#1A1D1F',
+                        color: Math.round(item.actualDemand) !== Math.round(item.demand) ? '#2D60FF' : '#1A1D1F',
                         fontSize: '1rem'
                     }}>
                         {Math.round(item.actualDemand).toLocaleString('en-US')}
@@ -541,10 +541,10 @@ const DashboardStockTable = ({ filterMrpType, filterMinDemand, filterCritical }:
                         <Table>
                             <TableHead sx={{ bgcolor: '#F9F9FB' }}>
                                 <TableRow>
-                                    {['Material', 'Stock', 'Reorder', 'Max_LFL', 'Demand', 'Actual Demand', 'Date', 'Time', ''].map((header, i) => (
+                                    {['Material', 'Stock', 'Reorder', 'Max_LFL', 'Demand', 'Actual Demand', 'Date', 'Time', 'Edit'].map((header, i) => (
                                         <TableCell
                                             key={i}
-                                            align={['Stock', 'Reorder', 'Max_LFL', 'Demand', 'Actual Demand'].includes(header) ? 'right' : header === '' ? 'center' : 'left'}
+                                            align={['Stock', 'Reorder', 'Max_LFL', 'Demand', 'Actual Demand'].includes(header) ? 'right' : header === 'Edit' ? 'center' : 'left'}
                                             sx={{
                                                 fontWeight: 700, color: '#6F767E', fontSize: '0.8rem',
                                                 py: 1.5,
@@ -642,7 +642,7 @@ const DashboardStockTable = ({ filterMrpType, filterMinDemand, filterCritical }:
                                         <TableCell align="right" sx={{ py: 1.2 }}>
                                             <Typography variant="body2" sx={{
                                                 fontWeight: 800,
-                                                color: item.actualDemand !== item.demand ? '#2D60FF' : '#1A1D1F',
+                                                color: Math.round(item.actualDemand) !== Math.round(item.demand) ? '#2D60FF' : '#1A1D1F',
                                                 fontFamily: 'monospace',
                                                 fontSize: '1rem',
                                                 display: 'flex',
@@ -651,7 +651,7 @@ const DashboardStockTable = ({ filterMrpType, filterMinDemand, filterCritical }:
                                                 gap: 0.5
                                             }}>
                                                 {Math.round(item.actualDemand).toLocaleString('en-US')}
-                                                {item.actualDemand !== item.demand && (
+                                                {Math.round(item.actualDemand) !== Math.round(item.demand) && (
                                                     <Box component="span" sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: '#2D60FF' }} />
                                                 )}
                                             </Typography>

@@ -90,7 +90,9 @@ export async function GET(req: NextRequest) {
                 OR: [
                     { matnr: { contains: search } },
                     { maktx: { contains: search } },
-                    { matkl: { contains: search } }
+                    { matkl: { contains: search } },
+                    { pscMaterial: { contains: search } },
+                    { pscMaterialDesc: { contains: search } }
                 ]
             });
         }
@@ -153,7 +155,7 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
     try {
         const body = await req.json();
-        const { id, minbe, mabst } = body;
+        const { id, minbe, mabst, pscMaterial, pscMaterialDesc } = body;
 
         if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
 
@@ -188,7 +190,9 @@ export async function PATCH(req: NextRequest) {
                 minbe: newMinbe,
                 mabst: newMabst,
                 demand: newDemand,
-                actualDemand: newActualDemand
+                actualDemand: newActualDemand,
+                ...(pscMaterial !== undefined && { pscMaterial }),
+                ...(pscMaterialDesc !== undefined && { pscMaterialDesc })
             }
         });
 

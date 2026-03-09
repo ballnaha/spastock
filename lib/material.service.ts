@@ -20,6 +20,8 @@ export interface MaterialData {
     actualDemand: number | null;
     deliveryDate: string | null;
     deliveryTime: string | null;
+    pscMaterial: string | null;
+    pscMaterialDesc: string | null;
 }
 
 export const parseMaterialRow = (row: any): MaterialData | null => {
@@ -77,6 +79,8 @@ export const parseMaterialRow = (row: any): MaterialData | null => {
         actualDemand: demand, // Default to calculated demand
         deliveryDate: normalizedRow['delivery date'] || normalizedRow['delivery_date'] || normalizedRow['deliverydate'] || null,
         deliveryTime: normalizedRow['delivery time'] || normalizedRow['delivery_time'] || normalizedRow['deliverytime'] || null,
+        pscMaterial: normalizedRow['psc_material'] || normalizedRow['psc material'] || normalizedRow['pscmaterial'] || null,
+        pscMaterialDesc: normalizedRow['psc_material_desc'] || normalizedRow['psc material desc'] || normalizedRow['pscmaterialdesc'] || null,
     };
 };
 
@@ -146,7 +150,9 @@ export const upsertMaterials = async (
                     // If user hasn't manually adjusted actualDemand (it matches old demand), update it to match new demand
                     actualDemand: match.actualDemand !== null && match.actualDemand !== match.demand ? match.actualDemand : updatedDemand,
                     deliveryDate: item.deliveryDate || match.deliveryDate,
-                    deliveryTime: item.deliveryTime || match.deliveryTime
+                    deliveryTime: item.deliveryTime || match.deliveryTime,
+                    pscMaterial: item.pscMaterial || match.pscMaterial,
+                    pscMaterialDesc: item.pscMaterialDesc || match.pscMaterialDesc
                 }
             });
 
@@ -174,6 +180,8 @@ export const upsertMaterials = async (
                 actualDemand: item.demand,
                 deliveryDate: item.deliveryDate,
                 deliveryTime: item.deliveryTime,
+                pscMaterial: item.pscMaterial,
+                pscMaterialDesc: item.pscMaterialDesc,
             });
         }
     }
@@ -249,7 +257,9 @@ export const importMaterials = async (
             minbe: true,
             mabst: true,
             deliveryDate: true,
-            deliveryTime: true
+            deliveryTime: true,
+            pscMaterial: true,
+            pscMaterialDesc: true
         }
     });
 
@@ -295,6 +305,8 @@ export const importMaterials = async (
                     actualDemand: existing.actualDemand !== null && existing.actualDemand !== existing.demand ? existing.actualDemand : updatedDemand,
                     deliveryDate: item.deliveryDate || existing.deliveryDate,
                     deliveryTime: item.deliveryTime || existing.deliveryTime,
+                    pscMaterial: item.pscMaterial || existing.pscMaterial,
+                    pscMaterialDesc: item.pscMaterialDesc || existing.pscMaterialDesc,
                 }
             });
         } else {
@@ -319,6 +331,8 @@ export const importMaterials = async (
                 actualDemand: item.demand,
                 deliveryDate: item.deliveryDate,
                 deliveryTime: item.deliveryTime,
+                pscMaterial: item.pscMaterial,
+                pscMaterialDesc: item.pscMaterialDesc,
             });
         }
     }

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Box, CssBaseline, ThemeProvider, createTheme, useMediaQuery } from '@mui/material';
+import { usePathname } from 'next/navigation';
 import AdminHeader from './AdminHeader';
 import AdminSidebar from './AdminSidebar';
 import AdminFooter from './AdminFooter';
@@ -39,20 +40,24 @@ interface AdminLayoutProps {
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [mounted, setMounted] = useState(false);
+    const pathname = usePathname();
+
+    // Close sidebar when pathname changes
+    React.useEffect(() => {
+        setSidebarOpen(false);
+    }, [pathname]);
 
     React.useEffect(() => {
         setMounted(true);
         const DESKTOP_BREAKPOINT = 1200;
 
-        // Set initial state based on window only after mount
-        setSidebarOpen(window.innerWidth >= DESKTOP_BREAKPOINT);
+        // Set initial state to closed by default
+        setSidebarOpen(false);
 
-        // Listen for resize
+        // Listen for resize to close sidebar on mobile if needed
         const handleResize = () => {
             if (window.innerWidth < DESKTOP_BREAKPOINT) {
                 setSidebarOpen(false);
-            } else {
-                setSidebarOpen(true);
             }
         };
 

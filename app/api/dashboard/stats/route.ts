@@ -53,7 +53,8 @@ export async function GET(request: Request) {
                     lbkum: true,
                     demand: true,
                     actualDemand: true,
-                    mabst: true
+                    mabst: true,
+                    minbe: true
                 },
                 orderBy: {
                     demand: 'desc'
@@ -92,7 +93,8 @@ export async function GET(request: Request) {
                 name: m.maktx || m.matnr,
                 stock: m.lbkum || 0,
                 demand: m.actualDemand ?? m.demand ?? 0,
-                max: m.mabst || 0
+                max: m.mabst || 0,
+                reorder: m.minbe || 0
             })),
             facets: {
                 mrpTypes: mrpTypeOptions.map(t => t.dismm).filter(Boolean),

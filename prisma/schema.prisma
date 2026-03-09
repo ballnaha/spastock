@@ -34,6 +34,8 @@ model Material {
   actualDemand Float?   @map("ACTUAL_DEMAND") // User-adjusted Demand Quantity
   deliveryDate String?  @map("DELIVERY_DATE") // Delivery Date
   deliveryTime String?  @map("DELIVERY_TIME") // Delivery Time
+  pscMaterial     String?  @map("PSC_MATERIAL")      // PSC Material Number (our own code)
+  pscMaterialDesc String?  @map("PSC_MATERIAL_DESC") @db.Text // PSC Material Description (our own name)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

@@ -33,6 +33,7 @@ interface DashboardData {
         stock: number;
         demand: number;
         max: number;
+        reorder: number;
     }>;
     facets: {
         mrpTypes: string[];
@@ -82,6 +83,14 @@ export default function DashboardPage() {
         fetchStats();
     }, [filterMrpType, filterMinDemand, filterCritical]);
 
+    // Fix: Force ApexCharts to recalculate width after page navigation
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            window.dispatchEvent(new Event('resize'));
+        }, 100);
+        return () => clearTimeout(timer);
+    }, []);
+
     const stats = [
         {
             title: 'Total Materials',
@@ -103,25 +112,32 @@ export default function DashboardPage() {
         },
     ];
 
+    const displayData = React.useMemo(() => data?.chartData.slice(0, 20) || [], [data]);
+
     // Chart Configuration
     const chartOptions: ApexCharts.ApexOptions = {
         chart: {
-            type: 'bar',
+            type: 'line', // Base type for mixed charts
             stacked: true,
             toolbar: { show: false },
             fontFamily: '"Sarabun", sans-serif',
             animations: {
                 enabled: true,
-                speed: 800,
-            },
-            dropShadow: {
-                enabled: false,
+                speed: 1500,
+                animateGradually: {
+                    enabled: true,
+                    delay: 300
+                },
+                dynamicAnimation: {
+                    enabled: true,
+                    speed: 500
+                }
             }
         },
         plotOptions: {
             bar: {
                 horizontal: false,
-                columnWidth: '50%',
+                columnWidth: '50px',
                 borderRadius: 0, // Sharp edges
                 dataLabels: {
                     total: {
@@ -140,6 +156,7 @@ export default function DashboardPage() {
         },
         dataLabels: {
             enabled: true,
+            enabledOnSeries: [0, 1], // Only show labels on Stock & Demand bars, NOT on line
             formatter: (val: any) => val ? Number(val).toLocaleString('en-US', { maximumFractionDigits: 0 }) : '0',
             style: {
                 colors: ['#FFFFFF'],
@@ -149,18 +166,38 @@ export default function DashboardPage() {
             },
             dropShadow: { enabled: false }
         },
+        markers: {
+            size: 0, // No markers on any series
+        },
         stroke: {
             show: true,
-            width: 1,
-            colors: ['#fff'] // Thin white separator
+            width: [1, 1, 3], // 1px for bars (white separator), 3px for line
+            colors: ['#fff', '#fff', '#F4C430'],
+            curve: 'smooth',
+            dashArray: [0, 0, 6] // 0 for bars (solid), 6 for dashed line
         },
         xaxis: {
-            categories: data?.chartData.map(d => d.name) || [],
+            categories: displayData.map(d => d.name),
+            tickAmount: displayData.length,
             labels: {
-                style: { colors: '#6F767E', fontSize: '11px', fontWeight: 500, fontFamily: '"Sarabun", sans-serif' },
-                rotate: -45,
-                trim: true,
+                style: { colors: '#6F767E', fontSize: '10px', fontWeight: 500, fontFamily: '"Sarabun", sans-serif' },
+                rotate: 0,
+                hideOverlappingLabels: false,
+                trim: false,
                 maxHeight: 120,
+                formatter: function (val: string) {
+                    if (!val) return '';
+                    // If name is long, split into two lines
+                    if (val.length > 20) {
+                        const mid = Math.floor(val.length / 2);
+                        const spaceIndex = val.indexOf(' ', mid - 5);
+                        if (spaceIndex !== -1 && spaceIndex < mid + 10) {
+                            return [val.substring(0, spaceIndex), val.substring(spaceIndex + 1)];
+                        }
+                        return [val.substring(0, 18), val.substring(18)];
+                    }
+                    return val;
+                }
             },
             axisBorder: { show: true, color: '#EFEFEF' },
             axisTicks: { show: false }
@@ -180,10 +217,10 @@ export default function DashboardPage() {
             padding: { top: 0, right: 0, bottom: 0, left: 10 }
         },
         fill: {
-            opacity: 0.85,
+            opacity: [0.85, 0.85, 1], // Slight opacity on bars, full on line
             type: 'solid',
         },
-        colors: ['#2D60FF', '#FF4D4D'], // Corporate Blue & Alert Red
+        colors: ['#2D60FF', '#fd3030', '#F4C430'], // Blue, Red, Gold for ROP
         tooltip: {
             theme: 'light',
             style: { fontFamily: '"Sarabun", sans-serif' },
@@ -219,11 +256,18 @@ export default function DashboardPage() {
     const chartSeries = [
         {
             name: 'Stock',
-            data: data?.chartData.map(d => d.stock) || []
+            type: 'column',
+            data: displayData.map(d => d.stock)
         },
         {
             name: 'Demand',
-            data: data?.chartData.map(d => d.demand) || []
+            type: 'column',
+            data: displayData.map(d => d.demand)
+        },
+        {
+            name: 'Reorder Point',
+            type: 'line',
+            data: displayData.map(d => d.reorder)
         }
     ];
 
@@ -483,6 +527,7 @@ export default function DashboardPage() {
                                 series={chartSeries}
                                 type="bar"
                                 height="100%"
+                                width="100%"
                             />
                         </Box>
                     )}

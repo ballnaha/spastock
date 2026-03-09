@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import Image from 'next/image';
 import {
     Box, Typography, Paper, Table, TableBody, TableCell,
     TableContainer, TableHead, TableRow, TextField,
@@ -38,6 +39,8 @@ interface Material {
     dismm: string;
     werks: string;
     demand: number | null;
+    pscMaterial: string | null;
+    pscMaterialDesc: string | null;
 }
 
 // Mobile Card Component
@@ -69,6 +72,11 @@ const MaterialMobileCard = ({ m, onEdit, isDataIncomplete }: { m: Material, onEd
                     <Typography variant="caption" sx={{ color: '#6F767E', fontWeight: 600 }}>
                         {m.matnr}
                     </Typography>
+                    {m.pscMaterial && (
+                        <Typography variant="caption" sx={{ color: '#10B981', fontWeight: 600, display: 'block' }}>
+                            PSC: {m.pscMaterial} {m.pscMaterialDesc ? `- ${m.pscMaterialDesc}` : ''}
+                        </Typography>
+                    )}
                 </Box>
                 <IconButton
                     size="small"
@@ -146,7 +154,7 @@ export default function MaterialsPage() {
     // Modal editing states
     const [editOpen, setEditOpen] = useState(false);
     const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
-    const [editValues, setEditValues] = useState<{ minbe: string; mabst: string }>({ minbe: '', mabst: '' });
+    const [editValues, setEditValues] = useState<{ minbe: string; mabst: string; pscMaterial: string; pscMaterialDesc: string }>({ minbe: '', mabst: '', pscMaterial: '', pscMaterialDesc: '' });
     const [saving, setSaving] = useState(false);
     const facetsLoaded = React.useRef(false);
     const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' as 'success' | 'error' });
@@ -195,7 +203,9 @@ export default function MaterialsPage() {
         setSelectedMaterial(m);
         setEditValues({
             minbe: Math.round(m.minbe || 0).toString(),
-            mabst: Math.round(m.mabst || 0).toString()
+            mabst: Math.round(m.mabst || 0).toString(),
+            pscMaterial: m.pscMaterial || '',
+            pscMaterialDesc: m.pscMaterialDesc || ''
         });
         setEditOpen(true);
     };
@@ -210,7 +220,9 @@ export default function MaterialsPage() {
                 body: JSON.stringify({
                     id: selectedMaterial.id,
                     minbe: editValues.minbe,
-                    mabst: editValues.mabst
+                    mabst: editValues.mabst,
+                    pscMaterial: editValues.pscMaterial || null,
+                    pscMaterialDesc: editValues.pscMaterialDesc || null
                 })
             });
 
@@ -245,36 +257,83 @@ export default function MaterialsPage() {
     const activeFilterCount = (filterMrpType ? 1 : 0) + (filterMinDemand ? 1 : 0) + (filterCritical ? 1 : 0) + (missingConfig ? 1 : 0);
 
     const renderEditForm = () => (
-        <Stack spacing={3} sx={{ mt: 1 }}>
-            <Typography variant="caption" sx={{ color: '#6F767E', fontWeight: 700, mb: -1, display: 'block' }}>
-                MATERIAL: {selectedMaterial?.matnr}
-            </Typography>
-            <TextField
-                label="Reorder Point"
-                fullWidth
-                type="number"
-                value={editValues.minbe}
-                onChange={(e) => setEditValues({ ...editValues, minbe: e.target.value })}
-                onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                helperText="Stock level that triggers a reorder"
-                inputProps={{ step: 1 }}
-                InputProps={{
-                    startAdornment: <Box sx={{ mr: 1, color: '#8B5CF6', display: 'flex' }}><ArchiveBook size="20" variant="Bold" color="#8B5CF6" /></Box>
-                }}
-            />
-            <TextField
-                label="Maximum Stock"
-                fullWidth
-                type="number"
-                value={editValues.mabst}
-                onChange={(e) => setEditValues({ ...editValues, mabst: e.target.value })}
-                onWheel={(e) => (e.target as HTMLInputElement).blur()}
-                helperText="Maximum inventory capacity"
-                inputProps={{ step: 1 }}
-                InputProps={{
-                    startAdornment: <Box sx={{ mr: 1, color: '#00B074', display: 'flex' }}><BoxIcon size="20" variant="Bold" color="#00B074" /></Box>
-                }}
-            />
+        <Stack spacing={2.5} sx={{ mt: 1 }}>
+            {/* Material Info Card */}
+            <Box sx={{
+                p: 2, bgcolor: '#F8F9FB', borderRadius: 3,
+                border: '1px solid #EFEFEF',
+                display: 'flex', alignItems: 'center', gap: 1.5
+            }}>
+                <Box sx={{ p: 1, bgcolor: '#F0F4FF', borderRadius: 2, display: 'flex' }}>
+                    <Image src="/images/material.png" alt="PSC" width={40} height={40} style={{ objectFit: 'contain' }} />
+                </Box>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Typography sx={{ fontWeight: 800, fontSize: '0.9rem', color: '#1A1D1F', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {selectedMaterial?.maktx}
+                    </Typography>
+                    <Typography variant="caption" sx={{ color: '#6F767E', fontWeight: 600 }}>
+                        {selectedMaterial?.matnr}
+                    </Typography>
+                </Box>
+            </Box>
+
+            {/* Section: Stock Configuration */}
+            <Box>
+                <Typography variant="caption" sx={{ color: '#6F767E', fontWeight: 700, letterSpacing: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5 }}>
+                    <Image src="/images/spa-logo1.png" alt="PSC" width={20} height={20} style={{ objectFit: 'contain' }} />
+                    STOCK CONFIGURATION
+                </Typography>
+                <Stack spacing={2}>
+                    <TextField
+                        label="Reorder Point"
+                        fullWidth size="small"
+                        type="number"
+                        value={editValues.minbe}
+                        onChange={(e) => setEditValues({ ...editValues, minbe: e.target.value })}
+                        onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                        helperText="Stock level ที่ trigger การสั่งซื้อ"
+                        inputProps={{ step: 1 }}
+
+                    />
+                    <TextField
+                        label="Maximum Stock"
+                        fullWidth size="small"
+                        type="number"
+                        value={editValues.mabst}
+                        onChange={(e) => setEditValues({ ...editValues, mabst: e.target.value })}
+                        onWheel={(e) => (e.target as HTMLInputElement).blur()}
+                        helperText="ปริมาณ stock สูงสุดที่เก็บได้"
+                        inputProps={{ step: 1 }}
+
+                    />
+                </Stack>
+            </Box>
+
+            {/* Section: PSC Material Mapping */}
+            <Box>
+                <Typography variant="caption" sx={{ color: '#1c12d3', fontWeight: 700, letterSpacing: 0.5, display: 'flex', alignItems: 'center', gap: 0.5, mb: 1.5, pt: 1, borderTop: '1px dashed #EFEFEF' }}>
+                    <Image src="/images/psc-logo.png" alt="PSC" width={20} height={20} style={{ objectFit: 'contain' }} />
+                    PSC MATERIAL
+                </Typography>
+                <Stack spacing={2}>
+                    <TextField
+                        label="PSC Material"
+                        fullWidth size="small"
+                        value={editValues.pscMaterial}
+                        onChange={(e) => setEditValues({ ...editValues, pscMaterial: e.target.value })}
+                        placeholder="เช่น PSC-001"
+
+                    />
+                    <TextField
+                        label="PSC Material Description"
+                        fullWidth size="small"
+                        value={editValues.pscMaterialDesc}
+                        onChange={(e) => setEditValues({ ...editValues, pscMaterialDesc: e.target.value })}
+                        placeholder="เช่น กระป๋อง2ชิ้น"
+
+                    />
+                </Stack>
+            </Box>
         </Stack>
     );
 
@@ -515,15 +574,16 @@ export default function MaterialsPage() {
                 ) : (
                     /* Desktop Table View */
                     <TableContainer>
-                        <Table sx={{ minWidth: 800 }}>
+                        <Table sx={{ minWidth: 950 }}>
                             <TableHead sx={{ bgcolor: '#FCFCFC' }}>
                                 <TableRow>
-                                    <TableCell sx={{ fontWeight: 700, color: '#6F767E' }}>MATERIAL</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: '#6F767E' }}>S.P.A. MATERIAL</TableCell>
+                                    <TableCell sx={{ fontWeight: 700, color: '#1c12d3' }}>PSC MATERIAL</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 700, color: '#6F767E' }}>STOCK</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 700, color: '#F59E0B' }}>REORDER POINT</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 700, color: '#2D60FF' }}>MAX STOCK</TableCell>
                                     <TableCell align="right" sx={{ fontWeight: 700, color: '#EF4444' }}>DEMAND</TableCell>
-                                    <TableCell align="center" sx={{ fontWeight: 700, color: '#6F767E' }}>ACTIONS</TableCell>
+                                    <TableCell align="center" sx={{ fontWeight: 700, color: '#6F767E' }}>EDIT</TableCell>
                                 </TableRow>
                             </TableHead>
                             <TableBody key={refreshKey} sx={{ animation: 'fadeInTable 0.5s ease-out' }}>
@@ -550,6 +610,24 @@ export default function MaterialsPage() {
                                                     </Typography>
                                                 </Box>
                                             </Box>
+                                        </TableCell>
+
+                                        <TableCell>
+                                            {m.pscMaterial ? (
+                                                <Box>
+                                                    {m.pscMaterialDesc && (
+                                                        <Typography variant="subtitle2" sx={{ color: '#1c12d3', fontWeight: 700 }}>
+                                                            {m.pscMaterialDesc}
+                                                        </Typography>
+                                                    )}
+                                                    <Typography variant="caption" sx={{ fontWeight: 500, color: '#6F767E' }}>
+                                                        {m.pscMaterial}
+                                                    </Typography>
+
+                                                </Box>
+                                            ) : (
+                                                <Typography variant="caption" sx={{ color: '#C4C4C4', fontStyle: 'italic' }}>—</Typography>
+                                            )}
                                         </TableCell>
 
                                         <TableCell align="right">
@@ -690,7 +768,7 @@ export default function MaterialsPage() {
                 <Dialog
                     open={editOpen}
                     onClose={() => !saving && setEditOpen(false)}
-                    maxWidth="xs"
+                    maxWidth="sm"
                     fullWidth
                     disableScrollLock
                     PaperProps={{
@@ -701,7 +779,7 @@ export default function MaterialsPage() {
                         <Box sx={{ p: 1, bgcolor: '#F0F4FF', borderRadius: 2, color: '#2D60FF', display: 'flex' }}>
                             <Setting2 size="24" variant="Bold" color="#2D60FF" />
                         </Box>
-                        Edit Configuration
+                        Edit Material Master
                     </DialogTitle>
                     <DialogContent>
                         {renderEditForm()}
