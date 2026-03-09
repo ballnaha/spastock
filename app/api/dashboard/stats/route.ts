@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+export const dynamic = 'force-dynamic';
 // Trigger refresh to fix cache issue 
 
 export async function GET(request: Request) {
@@ -92,7 +93,7 @@ export async function GET(request: Request) {
             chartData: chartMaterials.map(m => ({
                 name: m.maktx || m.matnr,
                 stock: m.lbkum || 0,
-                demand: m.actualDemand ?? m.demand ?? 0,
+                demand: m.demand ?? 0,
                 max: m.mabst || 0,
                 reorder: m.minbe || 0
             })),
